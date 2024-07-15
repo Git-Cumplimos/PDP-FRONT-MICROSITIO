@@ -34,7 +34,7 @@ input, select{
 }
 .margenImagen{
   width: 70%;
-  margin: auto;
+  margin: 16px auto;
 }
 button{
   border-radius: 16px;

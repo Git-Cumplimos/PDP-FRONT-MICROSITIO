@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import classes from "./App.module.css";
+import { notify, notifyError } from "./utils/notify";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,41 @@ function App() {
     correoElectronico: "",
     validacionCorreoElectronico: "",
   });
+
+  const sendForm = async () => {
+    if (isFormValid()) {
+      try {
+        const backend = import.meta.env.VITE_REACT_APP_API_BACKEND_URL;
+        const body = createRequestBody(formData);
+        console.log("Body:", body);
+        const requestOptions = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        };
+
+        const res = await fetch(backend, requestOptions);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.status) {
+          notify("Usuario Registrado");
+          cleanForm();
+        } else {
+          notifyError("Error registrando usuario");
+          cleanForm();
+        }
+      } catch (error) {
+        console.error("Error en la solicitud:", error);
+        notifyError("Error en la solicitud. Intenta de nuevo más tarde.");
+        cleanForm();
+      }
+    }
+  };
 
   const isFormValid = () => {
     for (let key in formData) {
@@ -32,6 +68,24 @@ function App() {
       }
     }
     return true;
+  };
+
+  const createRequestBody = (formData) => {
+    const body = {
+      tipoDocumento: formData.tipoDocumento,
+      numeroDocumento: formData.numeroDocumento,
+      numeroCelular: formData.numeroCelular,
+      correoElectronico: formData.correoElectronico,
+    };
+  
+    if (formData.tipoDocumento === 'NIT') {
+      body.nombreEmpresa = formData.nombreEmpresa;
+    } else {
+      body.nombre = formData.nombre;
+      body.apellido = formData.apellido;
+    }
+  
+    return body;
   };
 
   const onChangeFormat = (ev) => {
@@ -83,7 +137,7 @@ function App() {
       const regex = /^3\d{0,9}$/;
 
       if (!value.startsWith("3")) {
-        ev.target.setCustomValidity("El número debe empezar con un 3.")
+        ev.target.setCustomValidity("El número debe empezar con un 3.");
       }
       if (regex.test(value) || value === "") {
         setFormData((d) => ({
@@ -119,29 +173,6 @@ function App() {
   const validateEmail = (email) => {
     const regex = /\S+@\S+\.\S+/;
     return regex.test(email);
-  };
-
-  const sendForm = () => {
-    if (isFormValid()) {
-      const data = `
-        tipoDocumento: ${formData.tipoDocumento},
-        numeroDocumento: ${formData.numeroDocumento},
-        nombre: ${formData.nombre},
-        apellido: ${formData.apellido},
-        nombreEmpresa: ${formData.nombreEmpresa},
-        numeroCelular: ${formData.numeroCelular},
-        validarNumeroCelular: ${formData.validarNumeroCelular},
-        correoElectronico: ${formData.correoElectronico},
-        validacionCorreoElectronico: ${formData.validacionCorreoElectronico}`;
-        const requestOptions = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        };
-        fetch('http://localhost:8000/backend/pasarela-pagos/consulta-datos-usuario', requestOptions)
-        .then(response => response.json())
-        .then(data => console.log(data));
-    }
   };
 
   const cleanForm = () => {
@@ -257,7 +288,9 @@ function App() {
                   e.target.setCustomValidity("");
                 }
               }}
-              onInput={(e) => {e.target.setCustomValidity("")}}
+              onInput={(e) => {
+                e.target.setCustomValidity("");
+              }}
               required
             />
           </div>
