@@ -3,7 +3,10 @@ import "./App.css";
 import classes from "./App.module.css";
 import { notify, notifyError } from "./utils/notify";
 
+
+
 function App() {
+
   const [formData, setFormData] = useState({
     tipoDocumento: "CC",
     numeroDocumento: "",
@@ -20,8 +23,8 @@ function App() {
     if (isFormValid()) {
       try {
         const backend = import.meta.env.VITE_REACT_APP_API_BACKEND_URL;
+        const pageRedirect = import.meta.env.VITE_REACT_APP_API_URL_REDIRECT;
         const body = createRequestBody(formData);
-        console.log("Body:", body);
         const requestOptions = {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -39,6 +42,7 @@ function App() {
         if (data.status) {
           notify("Usuario Registrado");
           cleanForm();
+          window.open(pageRedirect, "_blank");
         } else {
           notifyError("Error registrando usuario");
           cleanForm();
